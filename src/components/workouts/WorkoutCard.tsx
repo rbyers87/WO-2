@@ -121,7 +121,7 @@ import React, { useState, useEffect } from 'react';
               )}
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-1 dark:text-gray-400" />
-                <span className="text-sm dark:text-gray-300">~45 min</span>
+                <span className="text-sm dark:text-gray-300">~60 min</span>
               </div>
             </div>
           </div>
