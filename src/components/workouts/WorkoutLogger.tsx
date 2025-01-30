@@ -143,93 +143,94 @@ import React, { useState, useEffect } from 'react';
         });
       };
 
-      const handleAddSet = (exerciseIndex: number) => {
-        setLogs((prevLogs) => {
-          const newLogs = [...prevLogs];
-          const exercise = workout.workout_exercises?.[exerciseIndex];
-          if (exercise) {
-            newLogs[exerciseIndex] = {
-              ...newLogs[exerciseIndex],
-              sets: [...newLogs[exerciseIndex].sets, {
-                id: uuidv4(), // Generate a new UUID for the new set
-                weight: null,
-                reps: exercise.reps,
-                distance: exercise.distance,
-                time: formatTime(exercise.time),
-                calories: exercise.calories,
-              }]
+    const handleAddSet = (exerciseIndex: number) => {
+            setLogs((prevLogs) => {
+              const newLogs = [...prevLogs];
+              const exercise = workout.workout_exercises?.[exerciseIndex];
+              if (exercise) {
+                newLogs[exerciseIndex] = {
+                  ...newLogs[exerciseIndex],
+                  sets: [...newLogs[exerciseIndex].sets, {
+                    id: uuidv4(), // Generate a new UUID for the new set
+                    weight: null,
+                    reps: exercise.reps,
+                    distance: exercise.distance,
+                    time: formatTime(exercise.time),
+                    calories: exercise.calories,
+                  }]
+                };
+              }
+              return newLogs;
+            });
+          };
+        
+          const handleDeleteSet = (exerciseIndex: number, setIndex: number) => {
+            setLogs((prevLogs) => {
+              const newLogs = [...prevLogs];
+              newLogs[exerciseIndex].sets = newLogs[exerciseIndex].sets.filter((_, i) => i !== setIndex);
+              return newLogs;
+            });
+          };
+        
+          const calculateScore = (exercise: WorkoutExercise, log: ExerciseLog, workoutType: string) => {
+            // Calculate score based on exercise type
+            if (exercise.exercise.name === 'Run') {
+              // Score for Run is based on total distance
+              return log.sets.reduce((total, set) => total + (set.distance || 0), 0);
+            } else if (exercise.exercise.name === 'Assault Bike') {
+              // Score for Assault Bike is based on total calories
+              return log.sets.reduce((total, set) => total + (set.calories || 0), 0);
+            } else if (workoutType === 'weight training') {
+              // Score for weight training workouts is based on the heaviest weight used
+              let maxWeight = 0;
+              log.sets.forEach(set => {
+                if (set.weight > maxWeight) {
+                  maxWeight = set.weight;
+                }
+              });
+              return maxWeight;
+            } else {
+              // Score for other exercises is based on the heaviest weight used
+              let maxWeight = 0;
+              log.sets.forEach(set => {
+                if (set.weight > maxWeight) {
+                  maxWeight = set.weight;
+                }
+              });
+              return maxWeight;
+            }
+          };
+        
+          const calculateTotal = (exercise: WorkoutExercise, log: ExerciseLog) => {
+            if (exercise.exercise.name === 'Run') {
+              return log.sets.reduce((total, set) => {
+                return total + (set.distance || 0);
+              }, 0);
+            } else if (exercise.exercise.name === 'Assault Bike') {
+              return log.sets.reduce((total, set) => {
+                return total + (set.calories || 0);
+              }, 0);
+            } else {
+              return log.sets.reduce(
+                (total, set) => total + set.weight * set.reps,
+                0
+              );
+            }
+          };
+
+    // Add a new function to handle cancellation
+        const handleCancel = () => {
+          onClose(); // Close the modal without saving changes
             };
-          }
-          return newLogs;
-        });
-      };
 
-      const handleDeleteSet = (exerciseIndex: number, setIndex: number) => {
-        setLogs((prevLogs) => {
-          const newLogs = [...prevLogs];
-          newLogs[exerciseIndex].sets = newLogs[exerciseIndex].sets.filter((_, i) => i !== setIndex);
-          return newLogs;
-        });
-      };
-
-      const calculateScore = (exercise: WorkoutExercise, log: ExerciseLog, workoutType: string) => {
-        // Calculate score based on exercise type
-        if (exercise.exercise.name === 'Run') {
-          // Score for Run is based on total distance
-          return log.sets.reduce((total, set) => total + (set.distance || 0), 0);
-        } else if (exercise.exercise.name === 'Assault Bike') {
-          // Score for Assault Bike is based on total calories
-          return log.sets.reduce((total, set) => total + (set.calories || 0), 0);
-        } else if (workoutType === 'weight training') {
-          // Score for weight training workouts is based on the heaviest weight used
-          let maxWeight = 0;
-          log.sets.forEach(set => {
-            if (set.weight > maxWeight) {
-              maxWeight = set.weight;
-            }
-          });
-          return maxWeight;
-        } else {
-          // Score for other exercises is based on the heaviest weight used
-          let maxWeight = 0;
-          log.sets.forEach(set => {
-            if (set.weight > maxWeight) {
-              maxWeight = set.weight;
-            }
-          });
-          return maxWeight;
-        }
-      };
-
-      const calculateTotal = (exercise: WorkoutExercise, log: ExerciseLog) => {
-        if (exercise.exercise.name === 'Run') {
-          return log.sets.reduce((total, set) => {
-            return total + (set.distance || 0);
-          }, 0);
-        } else if (exercise.exercise.name === 'Assault Bike') {
-          return log.sets.reduce((total, set) => {
-            return total + (set.calories || 0);
-          }, 0);
-        } else {
-          return log.sets.reduce(
-            (total, set) => total + set.weight * set.reps,
-            0
-          );
-        }
-      };
-
-      const handleCancel = () => {
-        onClose(); // Close the modal without saving changes
-      };
-
-      const handleSubmit = async () => {
+        
+    const handleSubmit = async () => {
       if (!user) {
         alert('User is not logged in.');
         return;
       }
 
       try {
-        // Calculate the total score and total for the workout
         const score = logs.reduce((total, log, index) => {
           const exercise = workout.workout_exercises?.[index];
           return total + (exercise ? calculateScore(exercise, log, workout.type) : 0);
@@ -240,68 +241,27 @@ import React, { useState, useEffect } from 'react';
           return total + (exercise ? calculateTotal(exercise, log) : 0);
         }, 0);
 
-        console.log('WorkoutLogId:', workoutLogId);
-        console.log('Calculated Score:', score);
-        console.log('Calculated Total:', total);
-
         let workoutLog;
 
         if (workoutLogId) {
-          // Check if the workout log exists before attempting to update
-          const { data: existingLog, error: checkError } = await supabase
+          // Update existing workout log
+          const { error: updateError } = await supabase
             .from('workout_logs')
-            .select('id')
-            .eq('id', workoutLogId)
-            .single();
+            .update({
+              notes,
+              score,
+              total,
+              completed_at: new Date().toISOString(),
+            })
+            .eq('id', workoutLogId);
 
-          if (checkError) {
-            console.error('Error checking workout log existence:', checkError);
-            throw checkError;
+          if (updateError) {
+            console.error('Error updating workout log:', updateError);
+            throw updateError;
           }
+          
+          workoutLog = { id: workoutLogId };
 
-          if (existingLog) {
-            // Update existing workout log
-            const { data, error: updateError } = await supabase
-              .from('workout_logs')
-              .update({
-                notes,
-                score,
-                total,
-                completed_at: new Date().toISOString(),
-              })
-              .eq('id', workoutLogId)
-              .select()
-              .single(); // Ensure we get the updated row back
-
-            if (updateError) {
-              console.error('Error updating workout log:', updateError);
-              throw updateError;
-            }
-
-            workoutLog = data;
-          } else {
-            // Create new workout log if it doesn't exist
-            const { data, error: workoutError } = await supabase
-              .from('workout_logs')
-              .insert({
-                user_id: user.id,
-                workout_id: workout.id,
-                notes,
-                completed_at: new Date().toISOString(),
-                score,
-                total,
-              })
-              .select()
-              .single(); // Ensure we get the inserted row back
-
-            if (workoutError) {
-              console.error('Error creating workout log:', workoutError);
-              throw workoutError;
-            }
-
-            workoutLog = data;
-            setWorkoutLogId(workoutLog.id); // Set the workoutLogId for future updates
-          }
         } else {
           // Create new workout log
           const { data, error: workoutError } = await supabase
@@ -315,15 +275,14 @@ import React, { useState, useEffect } from 'react';
               total,
             })
             .select()
-            .single(); // Ensure we get the inserted row back
+            .single();
 
           if (workoutError) {
             console.error('Error creating workout log:', workoutError);
             throw workoutError;
           }
-
           workoutLog = data;
-          setWorkoutLogId(workoutLog.id); // Set the workoutLogId for future updates
+          setWorkoutLogId(workoutLog.id);
         }
 
         // Prepare exercise scores for upsert
@@ -347,7 +306,6 @@ import React, { useState, useEffect } from 'react';
             };
           });
         });
-
         // Upsert exercise scores
         const { error: upsertError } = await supabase
           .from('exercise_scores')
@@ -407,237 +365,240 @@ import React, { useState, useEffect } from 'react';
           onClose();
         }
 
-          // Update the score in workout_logs table
-          if (workoutLogId) {
-            const { error: updateLogScoreError } = await supabase
-              .from('workout_logs')
-              .update({
-                score,
-                total,
-              })
-              .eq('id', workoutLogId);
+        // Update the score in workout_logs table
+        if (workoutLogId) {
+          const { error: updateLogScoreError } = await supabase
+            .from('workout_logs')
+            .update({
+              score,
+              total,
+            })
+            .eq('id', workoutLogId);
 
-            if (updateLogScoreError) {
-              console.error('Error updating workout log score:', updateLogScoreError);
-            }
+          if (updateLogScoreError) {
+            console.error('Error updating workout log score:', updateLogScoreError);
           }
-
-          alert('Workout logged successfully!');
-        } catch (error) {
-          console.error('Error logging workout:', error);
-          alert(`Failed to log workout: ${error.message || 'Unknown error'}`);
         }
-      };
 
+        alert('Workout logged successfully!');
+      } catch (error) {
+        console.error('Error logging workout:', error);
+        alert(`Failed to log workout: ${error.message || 'Unknown error'}`);
+      }
+    };
+        
       return (
         <div className="fixed inset-0 dark:bg-gray-800 bg-opacity-75 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 ai-style-change-1 dark:bg-gray-700 dark:text-gray-300 dark:shadow-gray-900">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <h2 className="text-2xl font-bold dark:text-gray-100 mb-6">
               Log Workout: {workout.name}
             </h2>
+    
+            <div className="space-y-6">
+              {workout.workout_exercises?.map((exercise, exerciseIndex) => (
+                <div key={exercise.id} className="border rounded-md p-4">
+                  <h3 className="font-medium text-lg mb-3">
+                    {exercise.exercise.name}
+                  </h3>
+    
+                  <ExercisePercentages 
+                    exerciseId={exercise.exercise_id}
+                    exerciseName={exercise.exercise.name}
+                  />
+    
+                  <div className="space-y-3 mt-4">
+                    {Array.from({ length: logs[exerciseIndex]?.sets?.length || 0 }).map((_, setIndex) => (
+                      <div key={setIndex} className="grid grid-cols-3 gap-4 items-center">
+                        <div className="text-sm text-gray-500">
+                          Set {setIndex + 1}
+                        </div>
+                        {
+													exercise.exercise.name === 'Run' ? (
+                          <>
+                            <div>
+                          <label className="block text-sm font-medium dark:text-gray-300">Time (HH:MM)</label>
+                          <input
+                            type="text"
+                            value={logs[exerciseIndex].sets[setIndex].time || '00:00'}
+                            onChange={(e) =>
+                              handleSetChange(exerciseIndex, setIndex, 'time', e.target.value)
+                            }
+                            className="w-full rounded-md border-gray-300"
+                            placeholder="HH:MM"
+                          />
+                        </div>
+   											<div>
+                              <label className="block text-sm font-medium dark:text-gray-300">Distance (meters)</label>
+                              <input
+                                type="number"
+                                value={logs[exerciseIndex].sets[setIndex].distance}
+                                onChange={(e) =>
+                                  handleSetChange(
+                                    exerciseIndex,
+                                    setIndex,
+                                    'distance',
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-full rounded-md border-gray-300"
+                                placeholder="Distance (meters)"
+                              />
+                            </div>
+                          </>
+                        ) : exercise.exercise.name === 'Assault Bike' ? (
+                          <>
+														<div>
+                          <label className="block text-sm font-medium dark:text-gray-300">Time (HH:MM)</label>
+                          <input
+                            type="text"
+                            value={logs[exerciseIndex].sets[setIndex].time || '00:00'}
+                            onChange={(e) =>
+                              handleSetChange(exerciseIndex, setIndex, 'time', e.target.value)
+                            }
+                            className="w-full rounded-md border-gray-300"
+                            placeholder="HH:MM"
+                          />
+                        </div>
+                            <div>
+                              <label className="block text-sm font-medium dark:text-gray-300">Calories</label>
+                              <input
+                                type="number"
+                                value={logs[exerciseIndex].sets[setIndex].calories}
+                                onChange={(e) =>
+                                  handleSetChange(
+                                    exerciseIndex,
+                                    setIndex,
+                                    'calories',
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-full rounded-md border-gray-300"
+                                placeholder="Calories"
+                              />
+                            </div>
 
-        <div className="space-y-6">
-          {workout.workout_exercises?.map((exercise, exerciseIndex) => (
-            <div key={exercise.id} className="border rounded-md p-4">
-              <h3 className="font-medium text-lg mb-3">
-                {exercise.exercise.name}
-              </h3>
+                          </>
+														) : exercise.exercise.name === 'Rower' ? (
+                          <>
+														<div>
+                              <label className="block text-sm font-medium dark:text-gray-300">Distance (meters)</label>
+                              <input
+                                type="number"
+                                value={logs[exerciseIndex].sets[setIndex].distance}
+                                onChange={(e) =>
+                                  handleSetChange(
+                                    exerciseIndex,
+                                    setIndex,
+                                    'distance',
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-full rounded-md border-gray-300"
+                                placeholder="Distance (meters)"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium dark:text-gray-300">Calories</label>
+                              <input
+                                type="number"
+                                value={logs[exerciseIndex].sets[setIndex].calories}
+                                onChange={(e) =>
+                                  handleSetChange(
+                                    exerciseIndex,
+                                    setIndex,
+                                    'calories',
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-full rounded-md border-gray-300"
+                                placeholder="Calories"
+                              />
+                            </div>
 
-              <ExercisePercentages 
-                exerciseId={exercise.exercise_id}
-                exerciseName={exercise.exercise.name}
-              />
-
-              <div className="space-y-3 mt-4">
-                {Array.from({ length: logs[exerciseIndex]?.sets?.length || 0 }).map((_, setIndex) => (
-                  <div key={setIndex} className="grid grid-cols-3 gap-4 items-center">
-                    <div className="text-sm text-gray-500">
-                      Set {setIndex + 1}
-                    </div>
-                    {
-                      exercise.exercise.name === 'Run' ? (
-                        <>
-                          <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Time (HH:MM)</label>
-                            <input
-                              type="text"
-                              value={logs[exerciseIndex].sets[setIndex].time || '00:00'}
-                              onChange={(e) =>
-                                handleSetChange(exerciseIndex, setIndex, 'time', e.target.value)
-                              }
-                              className="w-full rounded-md border-gray-300"
-                              placeholder="HH:MM"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Distance (meters)</label>
-                            <input
-                              type="number"
-                              value={logs[exerciseIndex].sets[setIndex].distance}
-                              onChange={(e) =>
-                                handleSetChange(
-                                  exerciseIndex,
-                                  setIndex,
-                                  'distance',
-                                  Number(e.target.value)
-                                )
-                              }
-                              className="w-full rounded-md border-gray-300"
-                              placeholder="Distance (meters)"
-                            />
-                          </div>
-                        </>
-                      ) : exercise.exercise.name === 'Assault Bike' ? (
-                        <>
-                          <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Time (HH:MM)</label>
-                            <input
-                              type="text"
-                              value={logs[exerciseIndex].sets[setIndex].time || '00:00'}
-                              onChange={(e) =>
-                                handleSetChange(exerciseIndex, setIndex, 'time', e.target.value)
-                              }
-                              className="w-full rounded-md border-gray-300"
-                              placeholder="HH:MM"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Calories</label>
-                            <input
-                              type="number"
-                              value={logs[exerciseIndex].sets[setIndex].calories}
-                              onChange={(e) =>
-                                handleSetChange(
-                                  exerciseIndex,
-                                  setIndex,
-                                  'calories',
-                                  Number(e.target.value)
-                                )
-                              }
-                              className="w-full rounded-md border-gray-300"
-                              placeholder="Calories"
-                            />
-                          </div>
-                        </>
-                      ) : exercise.exercise.name === 'Rower' ? (
-                        <>
-                          <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Distance (meters)</label>
-                            <input
-                              type="number"
-                              value={logs[exerciseIndex].sets[setIndex].distance}
-                              onChange={(e) =>
-                                handleSetChange(
-                                  exerciseIndex,
-                                  setIndex,
-                                  'distance',
-                                  Number(e.target.value)
-                                )
-                              }
-                              className="w-full rounded-md border-gray-300"
-                              placeholder="Distance (meters)"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium dark:text-gray-300">Calories</label>
-                            <input
-                              type="number"
-                              value={logs[exerciseIndex].sets[setIndex].calories}
-                              onChange={(e) =>
-                                handleSetChange(
-                                  exerciseIndex,
-                                  setIndex,
-                                  'calories',
-                                  Number(e.target.value)
-                                )
-                              }
-                              className="w-full rounded-md border-gray-300"
-                              placeholder="Calories"
-                            />
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div>
-                            <input
-                              type="number"
-                              value={logs[exerciseIndex].sets[setIndex].weight || ''}
-                              onChange={(e) =>
-                                handleSetChange(
-                                  exerciseIndex,
-                                  setIndex,
-                                  'weight',
-                                  e.target.value ? Number(e.target.value) : null
-                                )
-                              }
-                              className="w-full rounded-md border-gray-300"
-                              placeholder="Weight"
-                            />
-                          </div>
-                          <div>
-                            <input
-                              type="number"
-                              value={logs[exerciseIndex].sets[setIndex].reps}
-                              onChange={(e) =>
-                                handleSetChange(
-                                  exerciseIndex,
-                                  setIndex,
-                                  'reps',
-                                  Number(e.target.value)
-                                )
-                              }
-                              className="w-full rounded-md border-gray-300"
-                              placeholder="Reps"
-                            />
-                          </div>
-                        </>
-                      )}
+                          </>
+                        ) :  	(
+                          <>
+                            <div>
+    <input
+      type="number"
+      value={logs[exerciseIndex].sets[setIndex].weight || ''}
+      onChange={(e) =>
+        handleSetChange(
+          exerciseIndex,
+          setIndex,
+          'weight',
+          e.target.value ? Number(e.target.value) : null
+        )
+      }
+      className="w-full rounded-md border-gray-300"
+      placeholder="Weight"
+    />
+    
+                            </div>
+                            <div>
+                              <input
+                                type="number"
+                                value={logs[exerciseIndex].sets[setIndex].reps}
+                                onChange={(e) =>
+                                  handleSetChange(
+                                    exerciseIndex,
+                                    setIndex,
+                                    'reps',
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-full rounded-md border-gray-300"
+                                placeholder="Reps"
+                              />
+                            </div>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleDeleteSet(exerciseIndex, setIndex)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
                     <button
-                      onClick={() => handleDeleteSet(exerciseIndex, setIndex)}
-                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleAddSet(exerciseIndex)}
+                      className="mt-2 text-indigo-600 font-medium hover:underline"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      Add Set
                     </button>
                   </div>
-                ))}
+                </div>
+              ))}
+    
+              <div>
+                <label className="block text-sm font-medium dark:text-gray-300 mb-2">
+                  Notes
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full rounded-md border-gray-300"
+                  rows={3}
+                />
+              </div>
+    
+              <div className="flex justify-end space-x-4">
                 <button
-                  onClick={() => handleAddSet(exerciseIndex)}
-                  className="mt-2 text-indigo-600 font-medium hover:underline"
+                  onClick={handleCancel}
+                  className="px-4 py-2 text-sm font-medium dark:text-gray-300 hover:text-gray-500"
                 >
-                  Add Set
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
+                >
+                  {isCompleted ? 'Update Workout' : 'Complete Workout'}
                 </button>
               </div>
             </div>
-          ))}
-
-          <div>
-            <label className="block text-sm font-medium dark:text-gray-300 mb-2">
-              Notes
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-md border-gray-300"
-              rows={3}
-            />
-          </div>
-
-          <div className="flex justify-end space-x-4">
-            <button
-              onClick={handleCancel}
-              className="px-4 py-2 text-sm font-medium dark:text-gray-300 hover:text-gray-500"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
-            >
-              {isCompleted ? 'Update Workout' : 'Complete Workout'}
-            </button>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      );
+    }
