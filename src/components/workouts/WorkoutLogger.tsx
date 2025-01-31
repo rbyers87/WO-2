@@ -303,7 +303,7 @@ export function WorkoutLogger({ workout, onClose, previousLogs, workoutLogId: in
         return {
           id: set.id || uuidv4(),
           user_id: user.id,
-          workout_log_id: workoutLog.id,
+          workout_log_id: workoutLog.id, // Ensure this matches the workout_log_id in the table
           exercise_id: log.exercise_id,
           weight: set.weight,
           reps: set.reps,
@@ -313,6 +313,8 @@ export function WorkoutLogger({ workout, onClose, previousLogs, workoutLogId: in
         };
       });
     });
+
+    console.log('Upserting exercise scores for workout log ID:', workoutLog.id); // Debugging: Log workoutLog.id
 
     // Upsert exercise scores
     const { error: upsertError } = await supabase
