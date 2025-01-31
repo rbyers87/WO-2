@@ -243,6 +243,8 @@ export function WorkoutLogger({ workout, onClose, previousLogs, workoutLogId: in
     let workoutLog;
 
     if (workoutLogId) {
+      console.log('Updating workout log with ID:', workoutLogId); // Debugging: Log workoutLogId
+
       // Update existing workout log
       const { data, error: updateError } = await supabase
         .from('workout_logs')
