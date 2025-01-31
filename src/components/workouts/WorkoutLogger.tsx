@@ -261,6 +261,10 @@ export function WorkoutLogger({ workout, onClose, previousLogs, workoutLogId: in
         throw updateError;
       }
 
+      if (!data) {
+        throw new Error('No workout log found with the provided ID.');
+      }
+
       workoutLog = data;
     } else {
       // Create new workout log
@@ -367,27 +371,12 @@ export function WorkoutLogger({ workout, onClose, previousLogs, workoutLogId: in
       onClose();
     }
 
-      // Update the score in workout_logs table
-      if (workoutLogId) {
-        const { error: updateLogScoreError } = await supabase
-          .from('workout_logs')
-          .update({
-            score,
-            total,
-          })
-          .eq('id', workoutLogId);
-
-        if (updateLogScoreError) {
-          console.error('Error updating workout log score:', updateLogScoreError);
-        }
-      }
-
-      alert('Workout logged successfully!');
-    } catch (error) {
-      console.error('Error logging workout:', error);
-      alert(`Failed to log workout: ${error.message || 'Unknown error'}`);
-    }
-  };
+    alert('Workout logged successfully!');
+  } catch (error) {
+    console.error('Error logging workout:', error);
+    alert(`Failed to log workout: ${error.message || 'Unknown error'}`);
+  }
+};
 
   return (
         <div className="fixed inset-0 dark:bg-gray-800 bg-opacity-75 flex items-center justify-center p-4">
