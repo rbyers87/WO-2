@@ -28,26 +28,30 @@ export function UserRankings() {
 
         // Fetch workout logs for the selected date
         const { data, error } = await supabase
-          .from('workout_logs')
-          .select(`
-            user_id,
-            total,
-            profiles (
-              id,
-              first_name,
-              last_name,
-              profile_name
-            )
-          `)
-          .gte('completed_at', todayStart)
-          .lte('completed_at', todayEnd);
+  .from('workout_logs')
+  .select(`
+    user_id,
+    total,
+    profiles (
+      id,
+      first_name,
+      last_name,
+      profile_name
+    ),
+    workouts!inner (
+      scheduled_date
+    )
+  `)
+  .eq('workouts.scheduled_date', todayStart.split('T')[0]) // Filter by scheduled_date
+  .gte('completed_at', todayStart) // Ensure the workout was completed today
+  .lte('completed_at', todayEnd);
 
-        if (error) {
-          console.error('Supabase error:', error);
-          return;
-        }
+if (error) {
+  console.error('Supabase error:', error);
+  return;
+}
 
-        console.log('Fetched data:', data);
+console.log('Fetched data:', data);
 
         // Aggregate scores for each user
         const userStats = data.reduce((acc: Record<string, UserRanking>, log) => {
